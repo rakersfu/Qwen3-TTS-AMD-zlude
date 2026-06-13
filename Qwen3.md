@@ -102,6 +102,7 @@ pip install -U flash-attn --no-build-isolation
 Windows 示例（假设使用 zluda.exe 启动器）：
 ```powershell
 zluda.exe python your_script.py
+zluda.exe venv\Scripts\python.exe tts.py
 ```
 
 关键点：
