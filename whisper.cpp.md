@@ -119,6 +119,11 @@ def transcribe(audio_files, model_name, output_format):
                 )
                 output_text = result.stdout if result.stdout else "转录失败，未捕获到输出"
                 results.append(f"文件 {base_name} 转录结果:\n" + output_text)
+
+                # 保存到 outputs 文件夹
+                with open(output_file, "w", encoding="utf-8") as f:
+                    f.write(output_text)
+
             else:
                 # srt/vtt 模式，生成文件
                 if output_format == "srt":
@@ -132,7 +137,7 @@ def transcribe(audio_files, model_name, output_format):
                 temp_output = audio_file + "." + output_format
 
                 if os.path.exists(temp_output):
-                    shutil.move(temp_output, output_file)
+                    shutil.copy(temp_output, output_file)
                     with open(output_file, "r", encoding="utf-8") as f:
                         results.append(f"文件 {base_name} 转录结果:\n" + f.read())
                 else:
@@ -156,6 +161,7 @@ iface = gr.Interface(
 )
 
 iface.launch(server_name="0.0.0.0", server_port=7860)
+
 
 
 运行：
