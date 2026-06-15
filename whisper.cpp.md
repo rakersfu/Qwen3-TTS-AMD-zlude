@@ -1,84 +1,113 @@
-Whisper.cpp Vulkan + WebUI 使用指南
-📦 环境准备
-1. 安装必要工具
-Visual Studio Build Tools  
-下载并安装 Visual Studio Build Tools (visualstudio.microsoft.com in Bing)，勾选 MSVC 编译器 和 Windows SDK。
+# Whisper.cpp — Vulkan + WebUI 使用指南
 
-CMake  
-安装 CMake，并确保添加到系统 PATH。
+本指南整理了在 Windows 上使用 Whisper.cpp（启用 Vulkan 支持）以及基于 Gradio 的简单 WebUI 的完整流程：环境准备、编译、模型下载、命令行运行与 WebUI 使用示例。
 
-Ninja (可选)  
-如果使用 Ninja 构建系统，安装 Ninja。
+---
 
-Git  
-安装 Git for Windows，用于拉取源码。
+## 📦 环境准备（Windows）
 
-Python 3.11+  
-安装 Python，并确保 pip 可用。
+1. Visual Studio Build Tools
+- 下载并安装 Visual Studio Build Tools，勾选 MSVC 编译器 和 Windows SDK。
 
-Vulkan SDK  
-下载并安装 LunarG Vulkan SDK，安装后会自动设置环境变量 VULKAN_SDK。
-验证：
+2. CMake
+- 安装 CMake，并确保添加到系统 PATH。
 
-bat
+3. Ninja（可选）
+- 如果偏好 Ninja 构建器，可安装并使用。
+
+4. Git
+- 安装 Git for Windows，用于拉取源码。
+
+5. Python 3.11+
+- 安装 Python，并确保 pip 可用（用于运行 WebUI）。
+
+6. Vulkan SDK
+- 下载并安装 LunarG Vulkan SDK，安装后会自动设置环境变量 VULKAN_SDK。
+- 验证（在 cmd 或 PowerShell 中运行）：
+
+```bat
 echo %VULKAN_SDK%
 dir %VULKAN_SDK%\Bin\glslc.exe
-⚙️ 编译 Whisper.cpp
-1. 拉取源码
-bat
+```
+
+---
+
+## ⚙️ 编译 Whisper.cpp（启用 Vulkan）
+
+1. 拉取源码：
+
+```bat
 git clone https://github.com/ggerganov/whisper.cpp.git
 cd whisper.cpp
-2. 配置编译
-使用 MSVC + Vulkan：
+```
 
-bat
+2. 配置（使用 MSVC + Vulkan）：
+
+```bat
 cmake -B build -DGGML_VULKAN=1 -G "Visual Studio 17 2022" -A x64
-3. 编译
-bat
+```
+
+3. 编译（Release）：
+
+```bat
 cmake --build build --config Release
-编译完成后，主程序位于：
+```
 
-Code
+编译完成后可执行文件位于：
+
+```
 build\bin\Release\whisper-cli.exe
-📥 下载模型
-进入 models 目录，下载所需模型，例如：
+```
 
-bat
+---
+
+## 📥 下载模型
+
+进入项目的 `models` 目录并下载所需的 ggml 模型：
+
+```bat
 cd models
 curl -L -o ggml-base.en.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
 curl -L -o ggml-large-v1.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v1.bin
-可选模型：
+```
 
-ggml-tiny.en.bin （最快，精度低）
+常见模型说明：
+- ggml-tiny.en.bin（最快，精度最低）
+- ggml-base.en.bin（速度/准确度平衡）
+- ggml-small.en.bin
+- ggml-medium.en.bin
+- ggml-large-v3.bin（最精确，显存需求高）
 
-ggml-base.en.bin （平衡）
+---
 
-ggml-small.en.bin
+## ▶️ 命令行运行示例
 
-ggml-medium.en.bin
+- 转录示例音频：
 
-ggml-large-v3.bin （最精确，显存需求大）
-
-▶️ 命令行运行
-转录示例音频
-bat
+```bat
 .\build\bin\Release\whisper-cli.exe -m models\ggml-base.en.bin -f samples\jfk.wav
-生成字幕文件
-bat
+```
+
+- 生成字幕（SRT）：
+
+```bat
 .\build\bin\Release\whisper-cli.exe -m models\ggml-base.en.bin -f samples\jfk.wav --output-srt
-🌐 WebUI 使用
-1. 安装依赖
-bat
-pip install gradio
-2. 运行 WebUI
-在项目根目录创建 webui.py，内容如下：
+```
 
+---
 
+## 🌐 WebUI（Gradio）示例
+
+下面给出一个简单的 Gradio WebUI 示例（将项目根目录下创建 `webui.py`）：
+
+```python
+# webui.py
 import gradio as gr
 import subprocess
 import os
 import shutil
 
+# 根据你的安装位置修改下面的路径
 WHISPER_BIN = r"F:/whisper.cpp/build/bin/Release/whisper-cli.exe"
 MODEL_DIR = r"F:/whisper.cpp/models"
 OUTPUT_DIR = r"F:/whisper.cpp/outputs"
@@ -93,12 +122,15 @@ MODELS = [
     "ggml-large-v3.bin"
 ]
 
+
 def transcribe(audio_files, model_name, output_format):
+    """对单个或多个音频文件进行转录，支持 txt/srt/vtt 输出。"""
     results = []
     model_path = os.path.join(MODEL_DIR, model_name)
     if not os.path.exists(model_path):
         return f"模型文件不存在: {model_path}"
 
+    # 单文件或多文件统一处理
     if not isinstance(audio_files, list):
         audio_files = [audio_files]
 
@@ -109,7 +141,7 @@ def transcribe(audio_files, model_name, output_format):
 
         try:
             if output_format == "txt":
-                # 捕获 stdout，避免 GBK 解码错误
+                # 捕获 stdout，避免平台默认编码导致的解码错误
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
@@ -125,7 +157,7 @@ def transcribe(audio_files, model_name, output_format):
                     f.write(output_text)
 
             else:
-                # srt/vtt 模式，生成文件
+                # srt/vtt 模式，追加对应参数并执行
                 if output_format == "srt":
                     cmd.append("--output-srt")
                 elif output_format == "vtt":
@@ -133,7 +165,7 @@ def transcribe(audio_files, model_name, output_format):
 
                 subprocess.run(cmd, check=True)
 
-                # whisper-cli.exe 会在音频目录生成文件
+                # whisper-cli.exe 会在音频目录生成文件（audio_file + .srt/.vtt）
                 temp_output = audio_file + "." + output_format
 
                 if os.path.exists(temp_output):
@@ -148,6 +180,7 @@ def transcribe(audio_files, model_name, output_format):
 
     return "\n\n".join(results)
 
+
 iface = gr.Interface(
     fn=transcribe,
     inputs=[
@@ -161,24 +194,29 @@ iface = gr.Interface(
 )
 
 iface.launch(server_name="0.0.0.0", server_port=7860)
+```
 
+运行 WebUI：
 
-
-运行：
-
-bat
+```bat
+pip install gradio
 python webui.py
-浏览器访问：
+```
 
-Code
+在浏览器中打开：
+
+```
 http://127.0.0.1:7860
+```
+
 上传音频 → 选择模型 → 选择输出格式 → 获取转录或字幕。
 
-✅ 总结
-安装工具链：VS Build Tools + CMake + Vulkan SDK + Python + Gradio。
+---
 
-编译 whisper.cpp，生成 whisper-cli.exe。
+## ✅ 总结
+- 准备工具链：Visual Studio Build Tools、CMake、Vulkan SDK、Python（及 pip）、（可选）Ninja。
+- 编译 whisper.cpp（启用 Vulkan）得到 `whisper-cli.exe`。
+- 下载所需 ggml 模型到 `models` 目录。
+- 可通过命令行或上面的 Gradio WebUI 进行转录与字幕生成。
 
-下载模型到 models 目录。
-
-命令行或 WebUI 运行，生成转录或字幕。
+如需我把 WebUI 改为直接使用本仓库相对路径、支持更多 whisper-cli 参数或打包成 EXE/服务，我可以继续修改。
