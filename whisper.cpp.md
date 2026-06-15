@@ -170,13 +170,21 @@ def transcribe(audio_files, model_name, output_format, language):
 
                 subprocess.run(cmd, check=True)
 
-                # whisper-cli.exe 会在临时 wav 所在目录生成文件
+                # whisper-cli.exe 会在临时 wav 同目录生成文件
                 temp_output = temp_wav + "." + output_format
 
                 if os.path.exists(temp_output):
-                    shutil.copy(temp_output, output_file)
-                    with open(output_file, "r", encoding="utf-8") as f:
-                        results.append(f"文件 {base_name} 转录结果:\n" + f.read())
+                    # 读取 Whisper 输出内容，然后写入最终文件
+                    with open(temp_output, "r", encoding="utf-8") as f:
+                        text = f.read()
+
+                    with open(output_file, "w", encoding="utf-8") as f:
+                        f.write(text)
+
+                    results.append(f"文件 {base_name} 转录结果:\n" + text)
+
+                    # 删除临时文件，避免重复
+                    os.remove(temp_output)
                 else:
                     results.append(f"文件 {base_name} 转录失败，未生成输出文件。")
 
@@ -203,7 +211,6 @@ iface = gr.Interface(
 )
 
 iface.launch(server_name="0.0.0.0", server_port=7860)
-
 
 
 ```
