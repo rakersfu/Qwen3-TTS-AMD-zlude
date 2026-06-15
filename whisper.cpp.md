@@ -195,7 +195,7 @@ iface = gr.Interface(
         gr.File(type="filepath", label="上传音频文件（可多选）", file_types=["audio"], file_count="multiple"),
         gr.Dropdown(MODELS, value=MODELS[0], label="选择模型"),
         gr.Radio(["txt", "srt", "vtt"], value="txt", label="输出格式"),
-        gr.Textbox(value="en", label="语言代码 (如 en, zh, ja, fr)")
+        gr.Textbox(value="zh", label="语言代码 (如 en, zh, ja, fr)")
     ],
     outputs="text",
     title="Whisper.cpp WebUI",
